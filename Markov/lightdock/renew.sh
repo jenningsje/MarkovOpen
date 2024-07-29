@@ -1,0 +1,1 @@
+rm -rf *.pdb *.npy swarm_0 init setup.json

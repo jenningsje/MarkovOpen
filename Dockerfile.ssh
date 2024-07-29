@@ -1,0 +1,27 @@
+# Use an official Ubuntu as a parent image
+FROM ubuntu:latest
+
+# Install OpenSSH server and SSHFS
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server sshfs iputils-ping \
+    && mkdir /var/run/sshd \
+    && echo 'root:testpass' | chpasswd \
+    && useradd -ms /bin/bash test \
+    && echo 'test:testpass' | chpasswd
+
+# SSH login fix for Docker
+RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config \
+    && sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config \
+    && sed -i 's/#Port 22/Port 22/' /etc/ssh/sshd_config
+
+WORKDIR /
+
+RUN ssh-keygen -t rsa -b 4096 -f /root/.ssh/id_rsa -N "testpassword" \
+    && chmod 700 ./root/.ssh \
+    && chmod 600 ./root/.ssh/*
+
+# Expose SSH port
+EXPOSE 22
+
+# Start SSH server
+CMD ["/usr/sbin/sshd", "-D"]

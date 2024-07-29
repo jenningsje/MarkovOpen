@@ -1,0 +1,62 @@
+services:
+  ssh-server:
+    image: ssh-server
+    ports:
+      - "2222:22"
+    volumes:
+      - ssh-data:/root/.ssh
+
+  Markov:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: jenningsje/lightdock
+    ports:
+      - "4000:4000"
+    volumes:
+      - markov_app:/opt/app/MarkovProprietary/pipelinestages/app/mount
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 12G
+        reservations:
+          cpus: '2'
+          memory: 12G
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "3000:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./html:/etc/nginx/html
+    depends_on:
+      - node_app
+      - flask_app
+
+  node_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: jenningsje/node_app
+    ports:
+      - "5000:5000"
+    volumes:
+      - markov_app:/opt/app/MarkovProprietary/pipelinestages/app/mount
+
+  flask_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: jenningsje/flask_app
+    ports:
+      - "8000:8000"
+    volumes:
+      - markov_app:/opt/app/MarkovProprietary/pipelinestages/app/mount
+
+volumes:
+  markov_app:
+  sshvolume:
+  ssh-data:
+    driver: local
